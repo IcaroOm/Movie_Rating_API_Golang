@@ -121,7 +121,7 @@ func CreateMovie(db *gorm.DB) gin.HandlerFunc {
             Title:     req.Title,
             Year:      req.Year,
             Runtime:   req.Runtime,
-            Plot:      req.Plot,
+            Description:      req.Description,
             Tagline:   req.Tagline,
             Budget:    req.Budget,
             Gross:     req.Gross,
@@ -214,7 +214,7 @@ type CreateMovieRequest struct {
     Title     string  `json:"title" binding:"required"`
     Year      int     `json:"year" binding:"required"`
     Runtime   *int    `json:"runtime,omitempty"`
-    Plot      *string `json:"plot,omitempty"`
+    Description      *string `json:"plot,omitempty"`
     Tagline   *string `json:"tagline,omitempty"`
     GenreIDs  []uint  `json:"genre_ids,omitempty"`
     DirectorIDs []uint `json:"director_ids,omitempty"`

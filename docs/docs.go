@@ -23,52 +23,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/token": {
-            "post": {
-                "description": "Authenticate user and get JWT token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "authentication"
-                ],
-                "summary": "User login",
-                "parameters": [
-                    {
-                        "description": "User credentials",
-                        "name": "credentials",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.TokenResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/movies": {
             "get": {
                 "description": "Get all movies with average ratings",
@@ -85,7 +39,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handlers.MovieResponse"
+                                "$ref": "#/definitions/internal_handlers.MovieResponse"
                             }
                         }
                     },
@@ -96,6 +50,61 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create movie with relationships",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movies"
+                ],
+                "summary": "Create a new movie",
+                "parameters": [
+                    {
+                        "description": "Movie data",
+                        "name": "movie",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.CreateMovieRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.Movie"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
                         }
                     }
                 }
@@ -124,7 +133,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.MovieDetailResponse"
+                            "$ref": "#/definitions/internal_handlers.MovieDetailResponse"
                         }
                     },
                     "400": {
@@ -147,10 +156,203 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/token": {
+            "post": {
+                "description": "Authenticate user and get JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "User credentials",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "post": {
+                "description": "Create a user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Register new user",
+                "parameters": [
+                    {
+                        "description": "User credentials",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "handlers.MovieDetailResponse": {
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_handlers.CreateMovieRequest": {
+            "type": "object",
+            "required": [
+                "country_id",
+                "title",
+                "year"
+            ],
+            "properties": {
+                "actor_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "budget": {
+                    "type": "integer"
+                },
+                "country_id": {
+                    "type": "integer"
+                },
+                "director_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "genre_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "gross": {
+                    "type": "integer"
+                },
+                "language_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "plot": {
+                    "type": "string"
+                },
+                "runtime": {
+                    "type": "integer"
+                },
+                "tagline": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "writer_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handlers.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "internal_handlers.MovieDetailResponse": {
             "type": "object",
             "properties": {
                 "average_rating": {
@@ -170,7 +372,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.MovieResponse": {
+        "internal_handlers.MovieResponse": {
             "type": "object",
             "properties": {
                 "average_rating": {
@@ -187,7 +389,27 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ErrorResponse": {
+        "movie-api_internal_models.Country": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "movie-api_internal_models.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -196,7 +418,47 @@ const docTemplate = `{
                 }
             }
         },
-        "models.LoginRequest": {
+        "movie-api_internal_models.Genre": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "movie-api_internal_models.Language": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "movie-api_internal_models.LoginRequest": {
             "type": "object",
             "properties": {
                 "password": {
@@ -209,7 +471,155 @@ const docTemplate = `{
                 }
             }
         },
-        "models.TokenResponse": {
+        "movie-api_internal_models.Movie": {
+            "type": "object",
+            "properties": {
+                "actors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/movie-api_internal_models.Person"
+                    }
+                },
+                "budget": {
+                    "type": "integer"
+                },
+                "country": {
+                    "$ref": "#/definitions/movie-api_internal_models.Country"
+                },
+                "countryID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "directors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/movie-api_internal_models.Person"
+                    }
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/movie-api_internal_models.Genre"
+                    }
+                },
+                "gross": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "languages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/movie-api_internal_models.Language"
+                    }
+                },
+                "metascore": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/movie-api_internal_models.Role"
+                    }
+                },
+                "runtime": {
+                    "type": "integer"
+                },
+                "tagline": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "votes": {
+                    "type": "integer"
+                },
+                "writers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/movie-api_internal_models.Person"
+                    }
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "movie-api_internal_models.Person": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "movie-api_internal_models.Role": {
+            "type": "object",
+            "properties": {
+                "actor": {
+                    "$ref": "#/definitions/movie-api_internal_models.Person"
+                },
+                "character": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "movie": {
+                    "description": "Explicit relationship definitions",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/movie-api_internal_models.Movie"
+                        }
+                    ]
+                },
+                "movieID": {
+                    "description": "Foreign key for Movie",
+                    "type": "integer"
+                },
+                "personID": {
+                    "description": "Foreign key for Person",
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "movie-api_internal_models.TokenResponse": {
             "type": "object",
             "properties": {
                 "token": {

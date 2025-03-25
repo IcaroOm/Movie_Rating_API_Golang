@@ -24,7 +24,7 @@ type CreateUserRequest struct {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 409 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
-// @Router /users [post]
+// @Router /users [post]	
 func CreateUser(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req CreateUserRequest

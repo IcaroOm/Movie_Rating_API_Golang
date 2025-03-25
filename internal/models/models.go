@@ -19,7 +19,7 @@ type Movie struct {
     Rating      *float64   `gorm:"default:null"`
     Votes       *int       `gorm:"default:null"`
     Metascore   *int       `gorm:"default:null"`
-    Plot        *string    `gorm:"type:text;default:null"`
+    Description        *string    `gorm:"type:text;default:null"`
     Tagline     *string    `gorm:"size:200;default:null"`
     Genres    	[]Genre    `gorm:"many2many:movie_genres;"`
     Directors 	[]Person   `gorm:"many2many:movie_directors;"`
