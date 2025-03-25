@@ -1,0 +1,148 @@
+basePath: /api
+definitions:
+  handlers.MovieDetailResponse:
+    properties:
+      average_rating:
+        type: number
+      description:
+        type: string
+      id:
+        type: integer
+      release_date:
+        type: string
+      title:
+        type: string
+    type: object
+  handlers.MovieResponse:
+    properties:
+      average_rating:
+        type: number
+      description:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        example: error message
+        type: string
+    type: object
+  models.LoginRequest:
+    properties:
+      password:
+        example: senha123
+        type: string
+      username:
+        example: admin
+        type: string
+    type: object
+  models.TokenResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: support@movieapi.com
+    name: API Support
+  description: This is a sample movie rating and review API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Movie API
+  version: "1.0"
+paths:
+  /api/token:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and get JWT token
+      parameters:
+      - description: User credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: User login
+      tags:
+      - authentication
+  /movies:
+    get:
+      description: Get all movies with average ratings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.MovieResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get list of movies
+      tags:
+      - movies
+  /movies/{id}:
+    get:
+      description: Get detailed information about a specific movie
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MovieDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get movie details
+      tags:
+      - movies
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
