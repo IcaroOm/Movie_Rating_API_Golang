@@ -22,7 +22,7 @@ const JWTSecret = "your-secret-key"
 // @Success 200 {object} models.TokenResponse
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 401 {object} models.ErrorResponse
-// @Router /api/token [post]
+// @Router /token [post]
 func LoginHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var creds struct {

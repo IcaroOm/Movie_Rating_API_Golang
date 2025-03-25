@@ -17,7 +17,7 @@
     "host": "localhost:8000",
     "basePath": "/api",
     "paths": {
-        "/api/token": {
+        "/token": {
             "post": {
                 "description": "Authenticate user and get JWT token",
                 "consumes": [

@@ -1,11 +1,14 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"fmt"
+	"movie-api/internal/models"
 	"net/http"
 	"strconv"
-	"movie-api/internal/models"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type MovieResponse struct {
@@ -85,4 +88,140 @@ func GetMovieDetails(db *gorm.DB) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, movie)
 	}
+}
+
+// CreateMovie godoc
+// @Summary Create a new movie
+// @Description Create movie with relationships
+// @Tags movies
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param movie body CreateMovieRequest true "Movie data"
+// @Success 201 {object} models.Movie
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
+// @Router /movies [post]
+func CreateMovie(db *gorm.DB) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        var req CreateMovieRequest
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+
+        // Validate year
+        if req.Year < 1888 || req.Year > time.Now().Year()+5 {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
+            return
+        }
+
+        movie := models.Movie{
+            Title:     req.Title,
+            Year:      req.Year,
+            Runtime:   req.Runtime,
+            Plot:      req.Plot,
+            Tagline:   req.Tagline,
+            Budget:    req.Budget,
+            Gross:     req.Gross,
+            CountryID: req.CountryID,
+        }
+
+        // Handle relationships
+        tx := db.Begin()
+        defer func() {
+            if r := recover(); r != nil {
+                tx.Rollback()
+            }
+        }()
+
+        if err := handleRelationships(tx, &movie, req); err != nil {
+            tx.Rollback()
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+
+        if err := tx.Create(&movie).Error; err != nil {
+            tx.Rollback()
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create movie"})
+            return
+        }
+
+        tx.Commit()
+        c.JSON(http.StatusCreated, movie)
+    }
+}
+
+func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieRequest) error {
+    // Genres
+    if len(req.GenreIDs) > 0 {
+        var genres []models.Genre
+        if err := tx.Find(&genres, "id IN ?", req.GenreIDs).Error; err != nil {
+            return err
+        }
+        movie.Genres = genres
+    }
+
+    // Directors
+    if len(req.DirectorIDs) > 0 {
+        var directors []models.Person
+        if err := tx.Find(&directors, "id IN ?", req.DirectorIDs).Error; err != nil {
+            return err
+        }
+        movie.Directors = directors
+    }
+
+    // Writers
+	if len(req.WriterIDs) > 0 {
+		var writers []models.Person
+		if err := tx.Find(&writers, "in IN ?", req.WriterIDs).Error; err != nil {
+            return err 
+        }
+        movie.Writers = writers
+	}
+
+    // Actors
+    if len(req.WriterIDs) > 0 {
+        var actors []models.Person
+        if err := tx.Find(&actors, "in IN ?", req.ActorIDs).Error; err != nil {
+            return err
+        }
+        movie.Actors = actors
+    }
+
+    // Languages
+    if len(req.LanguageIDs) > 0 {
+        var languages []models.Language
+        if err := tx.Find(&languages, "in IN ?", req.ActorIDs).Error; err != nil {
+            return err
+        }
+        movie.Languages = languages
+    }
+
+    // Country
+    var country models.Country
+    if err := tx.First(&country, req.CountryID).Error; err != nil {
+        return fmt.Errorf("invalid country ID")
+    }
+    movie.Country = country
+
+    return nil
+}
+
+
+type CreateMovieRequest struct {
+    Title     string  `json:"title" binding:"required"`
+    Year      int     `json:"year" binding:"required"`
+    Runtime   *int    `json:"runtime,omitempty"`
+    Plot      *string `json:"plot,omitempty"`
+    Tagline   *string `json:"tagline,omitempty"`
+    GenreIDs  []uint  `json:"genre_ids,omitempty"`
+    DirectorIDs []uint `json:"director_ids,omitempty"`
+    WriterIDs []uint  `json:"writer_ids,omitempty"`
+    ActorIDs  []uint  `json:"actor_ids,omitempty"`
+    CountryID uint    `json:"country_id" binding:"required"`
+    LanguageIDs []uint `json:"language_ids,omitempty"`
+    Budget    *int64  `json:"budget,omitempty"`
+    Gross     *int64  `json:"gross,omitempty"`
 }

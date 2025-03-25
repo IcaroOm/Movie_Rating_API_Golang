@@ -1,7 +1,6 @@
 package models
 
 import (
-    "time"
     "gorm.io/gorm"
 )
 
@@ -15,7 +14,7 @@ type User struct {
 type Movie struct {
     gorm.Model
     Title       string     `gorm:"size:200"`
-    Year        time.Time
+    Year        int
     Runtime     *int       `gorm:"default:null"`
     Rating      *float64   `gorm:"default:null"`
     Votes       *int       `gorm:"default:null"`

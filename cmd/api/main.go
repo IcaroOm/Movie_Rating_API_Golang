@@ -35,10 +35,11 @@ func main() {
 	r := gin.Default()
 
 	// Public routes
-	r.POST("/api/token/", auth.LoginHandler(db))
-	r.GET("/api/movies/", handlers.GetMovies(db))
+	r.POST("/api/token", auth.LoginHandler(db))
+	r.POST("/api/users", handlers.CreateUser(db)) 
+	r.GET("/api/movies", handlers.GetMovies(db))
 	r.GET("/api/movies/:id/", handlers.GetMovieDetails(db))
-	r.GET("/api/reviews/", handlers.GetReviews(db))
+	r.GET("/api/reviews", handlers.GetReviews(db))
 	r.GET("/api/reviews/:id/", handlers.GetReviewDetails(db))
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -46,7 +47,8 @@ func main() {
 	authGroup := r.Group("/")
 	authGroup.Use(auth.JWTAuthMiddleware(db))
 	{
-		authGroup.POST("/api/reviews/", handlers.CreateReview(db))
+		authGroup.POST("/api/reviews", handlers.CreateReview(db))
+		authGroup.POST("/api/movies", handlers.CreateMovie(db))
 	}
 
 	r.Run(":8000")

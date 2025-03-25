@@ -58,7 +58,7 @@ info:
   title: Movie API
   version: "1.0"
 paths:
-  /api/token:
+  /token:
     post:
       consumes:
       - application/json
