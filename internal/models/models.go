@@ -45,11 +45,10 @@ type Person struct {
 
 type Role struct {
     gorm.Model
-    MovieID   uint    `gorm:"index"`  // Foreign key for Movie
-    PersonID  uint    `gorm:"index"`  // Foreign key for Person
+    MovieID   uint    `gorm:"index"`  
+    PersonID  uint    `gorm:"index"`  
     Character string  `gorm:"size:100"`
     
-    // Explicit relationship definitions
     Movie     Movie   `gorm:"foreignKey:MovieID;references:ID"`
     Actor     Person  `gorm:"foreignKey:PersonID;references:ID"`
 }	

@@ -1,23 +1,33 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"fmt"
+	"movie-api/internal/models"
 	"net/http"
 	"strconv"
-	"movie-api/internal/models"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ReviewResponse struct {
 	ID        uint   `json:"id"`
 	UserName  string `json:"user_name"`
 	MovieTitle string `json:"movie_title"`
+	Rating	  int	 `json:"user_rating"`
 	Text      string `json:"text"`
 }
 
 type CreateReviewRequest struct {
 	MovieID uint   `json:"movie_id" binding:"required"`
+	Rating	*int	   `json:"user_rating,omitempty"`
 	Text    string `json:"text" binding:"required"`
+}
+
+func (r *CreateReviewRequest) Validate() error {
+	if r.Rating == nil && r.Text == "" {
+		return fmt.Errorf("either rating or text must be provided, but not both empty")
+	}
+	return nil
 }
 
 func GetReviews(db *gorm.DB) gin.HandlerFunc {
@@ -25,7 +35,8 @@ func GetReviews(db *gorm.DB) gin.HandlerFunc {
 		var reviews []ReviewResponse
 
 		result := db.Model(&models.Review{}).
-			Select("reviews.id, users.username as user_name, movies.title as movie_title, reviews.text").
+			Select(`reviews.id, users.username as user_name, movies.title as movie_title, reviews.text, 
+			CASE WHEN reviews.rating IS NOT NULL THEN reviews.rating ELSE NULL END as rating`).
 			Joins("JOIN users ON users.id = reviews.user_id").
 			Joins("JOIN movies ON movies.id = reviews.movie_id").
 			Scan(&reviews)
@@ -49,7 +60,8 @@ func GetReviewDetails(db *gorm.DB) gin.HandlerFunc {
 
 		var review ReviewResponse
 		result := db.Model(&models.Review{}).
-			Select("reviews.id, users.username as user_name, movies.title as movie_title, reviews.text").
+			Select(`reviews.id, users.username as user_name, movies.title as movie_title, reviews.text, 
+			CASE WHEN reviews.rating IS NOT NULL THEN reviews.rating ELSE NULL END as rating`).
 			Joins("JOIN users ON users.id = reviews.user_id").
 			Joins("JOIN movies ON movies.id = reviews.movie_id").
 			Where("reviews.id = ?", id).
@@ -74,10 +86,14 @@ func CreateReview(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Check if movie exists
 		var movie models.Movie
 		if result := db.First(&movie, req.MovieID); result.Error != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Movie not found"})
+			return
+		}
+
+		if err := req.Validate(); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 

@@ -111,7 +111,6 @@ func CreateMovie(db *gorm.DB) gin.HandlerFunc {
             return
         }
 
-        // Validate year
         if req.Year < 1888 || req.Year > time.Now().Year()+5 {
             c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year"})
             return
@@ -128,7 +127,6 @@ func CreateMovie(db *gorm.DB) gin.HandlerFunc {
             CountryID: req.CountryID,
         }
 
-        // Handle relationships
         tx := db.Begin()
         defer func() {
             if r := recover(); r != nil {
@@ -154,7 +152,6 @@ func CreateMovie(db *gorm.DB) gin.HandlerFunc {
 }
 
 func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieRequest) error {
-    // Genres
     if len(req.GenreIDs) > 0 {
         var genres []models.Genre
         if err := tx.Find(&genres, "id IN ?", req.GenreIDs).Error; err != nil {
@@ -163,7 +160,6 @@ func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieReques
         movie.Genres = genres
     }
 
-    // Directors
     if len(req.DirectorIDs) > 0 {
         var directors []models.Person
         if err := tx.Find(&directors, "id IN ?", req.DirectorIDs).Error; err != nil {
@@ -172,7 +168,6 @@ func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieReques
         movie.Directors = directors
     }
 
-    // Writers
 	if len(req.WriterIDs) > 0 {
 		var writers []models.Person
 		if err := tx.Find(&writers, "in IN ?", req.WriterIDs).Error; err != nil {
@@ -181,7 +176,6 @@ func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieReques
         movie.Writers = writers
 	}
 
-    // Actors
     if len(req.WriterIDs) > 0 {
         var actors []models.Person
         if err := tx.Find(&actors, "in IN ?", req.ActorIDs).Error; err != nil {
@@ -190,7 +184,6 @@ func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieReques
         movie.Actors = actors
     }
 
-    // Languages
     if len(req.LanguageIDs) > 0 {
         var languages []models.Language
         if err := tx.Find(&languages, "in IN ?", req.ActorIDs).Error; err != nil {
@@ -199,7 +192,6 @@ func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieReques
         movie.Languages = languages
     }
 
-    // Country
     var country models.Country
     if err := tx.First(&country, req.CountryID).Error; err != nil {
         return fmt.Errorf("invalid country ID")
@@ -220,7 +212,7 @@ type CreateMovieRequest struct {
     DirectorIDs []uint `json:"director_ids,omitempty"`
     WriterIDs []uint  `json:"writer_ids,omitempty"`
     ActorIDs  []uint  `json:"actor_ids,omitempty"`
-    CountryID uint    `json:"country_id" binding:"required"`
+    CountryID uint    `json:"country_id,omitempty"`
     LanguageIDs []uint `json:"language_ids,omitempty"`
     Budget    *int64  `json:"budget,omitempty"`
     Gross     *int64  `json:"gross,omitempty"`

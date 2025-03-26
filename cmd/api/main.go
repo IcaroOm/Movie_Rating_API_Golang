@@ -28,22 +28,19 @@ import (
 )
 
 func main() {
-	// Initialize database
 	db := database.InitDB()
 	
-	// Setup router
 	r := gin.Default()
+	r.SetTrustedProxies(nil)
 
-	// Public routes
 	r.POST("/api/token", auth.LoginHandler(db))
-	r.POST("/api/users", handlers.CreateUser(db)) 
+	r.POST("/api/users", auth.CreateUser(db)) 
 	r.GET("/api/movies", handlers.GetMovies(db))
 	r.GET("/api/movies/:id/", handlers.GetMovieDetails(db))
 	r.GET("/api/reviews", handlers.GetReviews(db))
 	r.GET("/api/reviews/:id/", handlers.GetReviewDetails(db))
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Protected routes
 	authGroup := r.Group("/")
 	authGroup.Use(auth.JWTAuthMiddleware(db))
 	{
