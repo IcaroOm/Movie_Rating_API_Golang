@@ -124,7 +124,6 @@ func CreateMovie(db *gorm.DB) gin.HandlerFunc {
             Tagline:   req.Tagline,
             Budget:    req.Budget,
             Gross:     req.Gross,
-            CountryID: req.CountryID,
         }
 
         tx := db.Begin()
@@ -192,15 +191,16 @@ func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieReques
         movie.Languages = languages
     }
 
-    var country models.Country
-    if err := tx.First(&country, req.CountryID).Error; err != nil {
-        return fmt.Errorf("invalid country ID")
-    }
-    movie.Country = country
+	if req.CountryID != nil { // Check if CountryID is provided
+		var country models.Country
+		if err := tx.First(&country, *req.CountryID).Error; err != nil {
+			return fmt.Errorf("invalid country ID")
+		}
+		movie.Country = country
+	}
 
     return nil
 }
-
 
 type CreateMovieRequest struct {
     Title     string  `json:"title" binding:"required"`
@@ -212,7 +212,7 @@ type CreateMovieRequest struct {
     DirectorIDs []uint `json:"director_ids,omitempty"`
     WriterIDs []uint  `json:"writer_ids,omitempty"`
     ActorIDs  []uint  `json:"actor_ids,omitempty"`
-    CountryID uint    `json:"country_id,omitempty"`
+    CountryID *uint    `json:"country_id,omitempty"`
     LanguageIDs []uint `json:"language_ids,omitempty"`
     Budget    *int64  `json:"budget,omitempty"`
     Gross     *int64  `json:"gross,omitempty"`
