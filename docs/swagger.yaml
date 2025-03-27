@@ -8,6 +8,19 @@ definitions:
         description: Valid is true if Time is not NULL
         type: boolean
     type: object
+  internal_auth.CreateUserRequest:
+    properties:
+      password:
+        minLength: 6
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
   internal_handlers.CreateMovieRequest:
     properties:
       actor_ids:
@@ -47,22 +60,20 @@ definitions:
       year:
         type: integer
     required:
-    - country_id
     - title
     - year
     type: object
-  internal_handlers.CreateUserRequest:
+  internal_handlers.CreateReviewRequest:
     properties:
-      password:
-        minLength: 6
+      movie_id:
+        type: integer
+      text:
         type: string
-      username:
-        maxLength: 50
-        minLength: 3
-        type: string
+      user_rating:
+        type: integer
     required:
-    - password
-    - username
+    - movie_id
+    - text
     type: object
   internal_handlers.MovieDetailResponse:
     properties:
@@ -87,6 +98,19 @@ definitions:
         type: integer
       title:
         type: string
+    type: object
+  internal_handlers.ReviewResponse:
+    properties:
+      id:
+        type: integer
+      movie_title:
+        type: string
+      text:
+        type: string
+      user_name:
+        type: string
+      user_rating:
+        type: integer
     type: object
   movie-api_internal_models.Country:
     properties:
@@ -214,6 +238,29 @@ definitions:
       updatedAt:
         type: string
     type: object
+  movie-api_internal_models.Review:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      movie:
+        $ref: '#/definitions/movie-api_internal_models.Movie'
+      movieID:
+        type: integer
+      rating:
+        type: number
+      text:
+        type: string
+      updatedAt:
+        type: string
+      user:
+        $ref: '#/definitions/movie-api_internal_models.User'
+      userID:
+        type: integer
+    type: object
   movie-api_internal_models.Role:
     properties:
       actor:
@@ -227,14 +274,10 @@ definitions:
       id:
         type: integer
       movie:
-        allOf:
-        - $ref: '#/definitions/movie-api_internal_models.Movie'
-        description: Explicit relationship definitions
+        $ref: '#/definitions/movie-api_internal_models.Movie'
       movieID:
-        description: Foreign key for Movie
         type: integer
       personID:
-        description: Foreign key for Person
         type: integer
       updatedAt:
         type: string
@@ -243,6 +286,23 @@ definitions:
     properties:
       token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  movie-api_internal_models.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      password:
+        type: string
+      token:
+        type: string
+      updatedAt:
+        type: string
+      username:
         type: string
     type: object
 host: 127.0.0.1:8000
@@ -345,6 +405,87 @@ paths:
       summary: Get movie details
       tags:
       - movies
+  /reviews:
+    get:
+      description: Get a list of all reviews with user and movie information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handlers.ReviewResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/movie-api_internal_models.ErrorResponse'
+      summary: Get all reviews
+      tags:
+      - review
+    post:
+      consumes:
+      - application/json
+      description: Create review
+      parameters:
+      - description: Review data
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handlers.CreateReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/movie-api_internal_models.Review'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/movie-api_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/movie-api_internal_models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/movie-api_internal_models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new review
+      tags:
+      - review
+  /reviews/{id}:
+    get:
+      description: Get details of a specific review by its ID.
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.ReviewResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/movie-api_internal_models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/movie-api_internal_models.ErrorResponse'
+      summary: Get review details by ID
+      tags:
+      - review
   /token:
     post:
       consumes:
@@ -386,7 +527,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/internal_handlers.CreateUserRequest'
+          $ref: '#/definitions/internal_auth.CreateUserRequest'
       produces:
       - application/json
       responses:

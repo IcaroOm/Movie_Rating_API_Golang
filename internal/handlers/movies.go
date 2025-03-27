@@ -191,7 +191,7 @@ func handleRelationships(tx *gorm.DB, movie *models.Movie, req CreateMovieReques
         movie.Languages = languages
     }
 
-	if req.CountryID != nil { // Check if CountryID is provided
+	if req.CountryID != nil { 
 		var country models.Country
 		if err := tx.First(&country, *req.CountryID).Error; err != nil {
 			return fmt.Errorf("invalid country ID")

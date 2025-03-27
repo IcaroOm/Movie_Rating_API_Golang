@@ -157,6 +157,131 @@ const docTemplate = `{
                 }
             }
         },
+        "/reviews": {
+            "get": {
+                "description": "Get a list of all reviews with user and movie information.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get all reviews",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handlers.ReviewResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Create a new review",
+                "parameters": [
+                    {
+                        "description": "Review data",
+                        "name": "movie",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.CreateReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.Review"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/{id}": {
+            "get": {
+                "description": "Get details of a specific review by its ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "review"
+                ],
+                "summary": "Get review details by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.ReviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/movie-api_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token": {
             "post": {
                 "description": "Authenticate user and get JWT token",
@@ -223,7 +348,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handlers.CreateUserRequest"
+                            "$ref": "#/definitions/internal_auth.CreateUserRequest"
                         }
                     }
                 ],
@@ -270,10 +395,27 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_auth.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
         "internal_handlers.CreateMovieRequest": {
             "type": "object",
             "required": [
-                "country_id",
                 "title",
                 "year"
             ],
@@ -334,21 +476,21 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handlers.CreateUserRequest": {
+        "internal_handlers.CreateReviewRequest": {
             "type": "object",
             "required": [
-                "password",
-                "username"
+                "movie_id",
+                "text"
             ],
             "properties": {
-                "password": {
-                    "type": "string",
-                    "minLength": 6
+                "movie_id": {
+                    "type": "integer"
                 },
-                "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
+                "text": {
+                    "type": "string"
+                },
+                "user_rating": {
+                    "type": "integer"
                 }
             }
         },
@@ -386,6 +528,26 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_handlers.ReviewResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "movie_title": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                },
+                "user_rating": {
+                    "type": "integer"
                 }
             }
         },
@@ -580,6 +742,41 @@ const docTemplate = `{
                 }
             }
         },
+        "movie-api_internal_models.Review": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "movie": {
+                    "$ref": "#/definitions/movie-api_internal_models.Movie"
+                },
+                "movieID": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/movie-api_internal_models.User"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
         "movie-api_internal_models.Role": {
             "type": "object",
             "properties": {
@@ -599,19 +796,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "movie": {
-                    "description": "Explicit relationship definitions",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/movie-api_internal_models.Movie"
-                        }
-                    ]
+                    "$ref": "#/definitions/movie-api_internal_models.Movie"
                 },
                 "movieID": {
-                    "description": "Foreign key for Movie",
                     "type": "integer"
                 },
                 "personID": {
-                    "description": "Foreign key for Person",
                     "type": "integer"
                 },
                 "updatedAt": {
@@ -625,6 +815,32 @@ const docTemplate = `{
                 "token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "movie-api_internal_models.User": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         }

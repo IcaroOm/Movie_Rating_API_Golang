@@ -1,13 +1,14 @@
 package auth
 
 import (
+	"fmt"
+	"movie-api/internal/models"
+	"net/http"
+	"time"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"movie-api/internal/models"
-	"net/http"
-	"time"
 )
 
 const JWTSecret = "your-secret-key"
@@ -110,7 +111,6 @@ func CreateUser(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Generate JWT token using the logic from LoginHandler
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"sub": newUser.ID,
 			"exp": time.Now().Add(time.Hour * 24).Unix(),
@@ -122,10 +122,9 @@ func CreateUser(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Store the token in the user object
 		newUser.Token = tokenString
 
-		if err := db.Save(&newUser).Error; err != nil { // Use Save to update the existing user
+		if err := db.Save(&newUser).Error; err != nil { 
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user with token"})
 			return
 		}
@@ -169,4 +168,37 @@ func JWTAuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 		}
 	}
+}
+
+func GetUserIDFromToken(c *gin.Context) (uint, error) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return 0, fmt.Errorf("authorization header is missing")
+	}
+
+	tokenString := authHeader
+
+	// Replace with your actual JWT secret key
+	secretKey := []byte("your-secret-key")
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return secretKey, nil
+	})
+
+	if err != nil {
+		return 0, fmt.Errorf("invalid token: %w", err)
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		userIDFloat, ok := claims["sub"].(float64) // Assuming your claim key is "user_id"
+		if !ok {
+			return 0, fmt.Errorf("user_id claim not found or is not a number")
+		}
+		return uint(userIDFloat), nil
+	}
+
+	return 0, fmt.Errorf("invalid token claims")
 }

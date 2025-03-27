@@ -67,8 +67,8 @@ type Review struct {
     gorm.Model
     MovieID    uint       `gorm:"index:,unique,composite:user_movie"`
     UserID     uint       `gorm:"index:,unique,composite:user_movie"`
-    Rating     *float64   `gorm:"default:null"`
-    Text       *string    `gorm:"type:text;default:null"` 
+    Rating     float64   `gorm:"default:null"`
+    Text       string    `gorm:"type:text;default:null"` 
     Movie      Movie
     User       User
 }
