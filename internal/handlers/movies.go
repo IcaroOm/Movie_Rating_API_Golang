@@ -75,7 +75,7 @@ func GetMovieDetails(db *gorm.DB) gin.HandlerFunc {
 		var movie MovieDetailResponse
 		result := db.Model(&models.Movie{}).
 			Select("movies.id, movies.title, movies.description, "+
-				"movies.release_date, COALESCE(AVG(reviews.rating), 0) as average_rating").
+				"movies.year, COALESCE(AVG(reviews.rating), 0) as average_rating").
 			Joins("LEFT JOIN reviews ON reviews.movie_id = movies.id").
 			Where("movies.id = ?", id).
 			Group("movies.id").
